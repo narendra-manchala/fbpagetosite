@@ -1,0 +1,20 @@
+<% include ./partials/header%>
+
+
+<% if (!user) { %>
+<div class="container" id="login">
+
+	<p id="loginPara">Welcome! Please <a href="/login">log in</a>.</p>
+</div>
+
+<% } else { %>
+<div class="container" id="login">
+
+	<p>Hello, <%= user.username %>. View your <a href="/profile">profile</a>.</p>
+
+</div>
+<% } %>
+
+
+<% include ./partials/footer%>
+

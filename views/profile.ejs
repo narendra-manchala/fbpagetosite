@@ -1,0 +1,29 @@
+<% include ./partials/header%>
+
+<p>
+ID: <%= user.id %><br/>
+Username: <%= user.username %><br/>
+Name: <%= user.displayName %><br/>
+<% if (user.emails) { %>
+Email: <%= user.emails[0].value %><br/>
+<% } %>
+</p>
+<div><h1>Your pages:</h1>
+    <%var i=0%>
+    <%while(i<data.length){%>
+    <h2><%=i+1%>.<%=data[i].name%></h2>
+    <%for(var j=0;j<data[i].feed.data.length;j++){%>
+<%if(data[i].feed.data[j].message){%>
+<!--<h3><%=j+1%></h3>-->
+    <p><%=data[i].feed.data[j].message%></p>
+    <br>
+<%}%>
+    <%}%>
+    <br>
+    <%i++%>
+    <%}%>
+
+</div>
+
+
+<% include ./partials/footer%>
