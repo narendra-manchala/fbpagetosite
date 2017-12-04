@@ -1,0 +1,14 @@
+<% include ./partials/header%>
+
+<h1>Welcome to the future</h1>
+
+<h3> Select the page you want to convert to website</h3>
+<% var i=0 %>
+<% while(i<data.length){%>
+<a href="/profile/<%=data[i].id %>">
+    <h2> <%= i+1 +"."+ data[i].name%> </h2>
+</a>
+
+<%i++}%>
+
+<% include ./partials/footer%>

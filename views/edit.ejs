@@ -1,7 +1,7 @@
 <% include ./partials/header%>
 <div class="container jumbotron">
 
-    <form action="/page/<%=oneFeed.feedPageId%>/edit" method="post">
+    <form action="/page/:<%=oneFeed.feedId%>/<%=oneFeed.feedPageId%>/edit" method="post">
         <textarea rows="10" cols="100" id="feed" name="feed" ><%=oneFeed.feed%></textarea>
 
         <button type="submit">Submit</button>

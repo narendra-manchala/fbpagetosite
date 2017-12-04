@@ -5,7 +5,7 @@
 <div class="jumbotron container" id="feedDiv">
     <%for(var i=0; i<feed.length;i++){%>
     <h1><%=feed[i].feedName%></h1>
-    <p id="feed"><%=feed[i].feed%><br><a href="/page/<%=feed[i].feedPageId%>">More...</a></p>
+    <p id="feed"><%=feed[i].feed%><br><a href="/page/<%=feed[i].feedId%>/<%=feed[i].feedPageId%>">More...</a></p>
     <%}%>
 </div>
 

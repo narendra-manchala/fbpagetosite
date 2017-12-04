@@ -19,8 +19,17 @@ var feedSchema = mongoose.Schema({
     user:{
         fbId:String,
         username:String
-    }
+    },
+    name: String
 })
+
+// feedSchema.pre('save', function(next) {
+//     this.name = this.feedName;
+//     // this.feedName = undefined
+//     console.log(this);
+//
+// next();
+// });
 
 var userSchema = mongoose.Schema({
     username: String,
@@ -103,48 +112,63 @@ app.get('/login/facebook',
 app.get('/login/facebook/return', 
   passport.authenticate('facebook', { failureRedirect: '/login' }),
   function(req, res) {
-    res.redirect('/profile');
+    res.redirect('/select');
   });
 
-app.get('/profile',
-  require('connect-ensure-login').ensureLoggedIn(),
-  function(req, res){
-    // console.log(req.user.displayName)
-    // console.log(req.user.id)
+app.get('/select',
+    require('connect-ensure-login').ensureLoggedIn(),
+    function(req, res){
+        // console.log(req.user.displayName)
+        // console.log(req.user.id)
 
-      const options = {
-          method: 'GET',
-          uri: 'https://graph.facebook.com/v2.11/'+req.user.id+'/accounts',
-          qs: {
-              access_token: at,
-              type: "page",
-              fields: "feed,name,about"
-          }
-      };
-      const user = new User ({
-          username: req.user.displayName,
-          fbId: req.user.id
-      })
-      User.findOne({fbId:req.user.id}, function(err, existingAccount){
-          if(err){
-              console.log(err)
-          }else if(existingAccount){
-              console.log("Account already exits")
-              feedSave();
-          }else{
-              user.save(function(err, savedAccount){
-                  if(err){
-                      console.log(err)
-                  }else{
-                      // console.log(savedAccount)
-                      feedSave();
-                  }
-              })
-          }
-      })
+        const options = {
+            method: 'GET',
+            uri: 'https://graph.facebook.com/v2.11/'+req.user.id+'/accounts',
+            qs: {
+                access_token: at,
+                type: "page",
+                fields: "feed,name,about"
+            }
+        };
+        const user = new User ({
+            username: req.user.displayName,
+            fbId: req.user.id
+        })
+        User.findOne({fbId:req.user.id}, function(err, existingAccount){
+            if(err){
+                console.log(err)
+            }else if(existingAccount){
+                console.log(existingAccount)
+                console.log("Account already exits")
+                selectPage();
+
+            }else{
+                user.save(function(err, savedAccount){
+                    if(err){
+                        console.log(err)
+                    }else{
+                        // console.log(savedAccount)
+                        selectPage();
+                    }
+                })
+            }
+        })
+
+        function selectPage(){
+            request(options)
+                .then(function (res2) {
+                    var parsedRes = JSON.parse(res2).data;
+                    if(parsedRes.length>1){
+                        res.render("select",{data:parsedRes} )
+                        // res.send("this is ")
+                    }else{
+                        res.json(err)
+                    }
+                })
+        }
 
 
-        function feedSave(){
+        /*function feedSave(){
             request(options)
                 .then(function(res2){
                     var parsedRes = JSON.parse(res2).data;
@@ -152,46 +176,48 @@ app.get('/profile',
                     // res.json(parsedRes);
                     var i=0
                     while(i<parsedRes.length) {
-                        console.log(parsedRes[i]+i)
+                        // console.log(parsedRes[i]+i)
+                        // res.json(parsedRes)
                         parsedRes[i].feed.data.forEach(function(feedValue){
-                          if(feedValue.message){
-                              var feed = feedValue.message;
-                              var feedPageId = feedValue.id;
-                              var owner ={
-                                  fbId: req.user.id,
-                                  username: req.user.displayName
-                              }
-                              var feedData = {
-                                  feedName: parsedRes[i].name,
-                                  feedId: parsedRes[i].id,
-                                  feed: feed,
-                                  feedPageId: feedPageId,
-                                  user:owner
-                              }
-                              // console.log(feed);
-                              Feed.findOne({feedPageId: feedPageId}, function (err, existingFeed) {
-                                  if (err) {
-                                      console.log(err)
-                                  } else if (existingFeed) {
-                                      // console.log(feedData)
-                                      // console.log("existing Feed")
-                                      // console.log("Feed exist's, j = "+j+", i = "+i)
-                                  }
 
-                                  else {
+                            if(feedValue.message){
+                                var feed = feedValue.message;
+                                var feedPageId = feedValue.id;
+                                var owner ={
+                                    fbId: req.user.id,
+                                    username: req.user.displayName
+                                }
+                                var feedData = {
+                                    feedName: parsedRes[i].name,
+                                    feedId: parsedRes[i].id,
+                                    feed: feed,
+                                    feedPageId: feedPageId,
+                                    user:owner
+                                }
+                                // console.log(feed);
+                                // Feed.findOne({feedPageId: feedPageId}, function (err, existingFeed) {
+                                //     if (err) {
+                                //         console.log(err)
+                                //     } else if (existingFeed) {
+                                //         // console.log(feedData)
+                                //         // console.log("existing Feed")
+                                //         // console.log("Feed exist's, j = "+j+", i = "+i)
+                                //     }
+                                //
+                                //     else {
 
-                                      Feed.create(feedData, function (err, result) {
-                                          if (err) {
-                                              console.log(err)
-                                          } else {
-                                          }
-                                      })
-                                  }
-                              })
-                          }
+                                Feed.create(feedData, function (err, result) {
+                                    if (err) {
+                                        console.log(err)
+                                    } else {
+                                    }
+                                })
+                                //     }
+                                // })
+                            }
                         })
 
-                        /*for (var j = 0; j < parsedRes[i].feed.data.length; j++) {
+                        /!*for (var j = 0; j < parsedRes[i].feed.data.length; j++) {
                             if (parsedRes[i].feed.data[j].message) {
                                 var feed = parsedRes[i].feed.data[j].message;
                                 var feedPageIdLocal = parsedRes[i].feed.data[j].id;
@@ -227,7 +253,7 @@ app.get('/profile',
                                         //     })
                                         // }
                                     })
-                                }(j)*/
+                                }(j)*!/
 
 
                         i++
@@ -236,30 +262,186 @@ app.get('/profile',
                     res.redirect('/page');
                 })
 
+        }*/
+
+    });
+
+app.get('/profile/:pageId',
+  require('connect-ensure-login').ensureLoggedIn(),
+  function(req, res){
+    // console.log(req.user.displayName)
+    // console.log(req.user.id)
+
+      const options = {
+          method: 'GET',
+          uri: 'https://graph.facebook.com/v2.11/'+req.user.id+'/accounts',
+          qs: {
+              access_token: at,
+              type: "page",
+              fields: "feed,name,about"
+          }
+      };
+      const user = new User ({
+          username: req.user.displayName,
+          fbId: req.user.id
+      })
+      User.findOne({fbId:req.user.id}, function(err, existingAccount){
+          if(err){
+              console.log(err)
+          }else if(existingAccount){
+              console.log("Account already exits")
+              feedSave();
+
+          }else{
+              user.save(function(err, savedAccount){
+                  if(err){
+                      console.log(err)
+                  }else{
+                      // console.log(savedAccount)
+                      feedSave();
+                  }
+              })
+          }
+      })
+
+      // function selectPage(){
+      //     request(options)
+      //         .then(function (res2) {
+      //             var parsedRes = JSON.parse(res2).data;
+      //             if(parsedRes.length>1){
+      //                 res.render("select",{data:parsedRes} )
+      //                 // res.send("this is ")
+      //             }else{
+      //                 res.json(err)
+      //             }
+      //         })
+      // }
+
+
+        function feedSave(){
+            request(options)
+                .then(function(res2){
+                    var parsedRes = JSON.parse(res2).data;
+                    // console.log(parsedRes)
+                    // res.json(parsedRes);
+                    var i=0
+                    while(i<parsedRes.length) {
+                        // console.log(parsedRes[i].id)
+                        // res.json(parsedRes)
+                        if (parsedRes[i].id == req.params.pageId) {
+                            // console.log(req.params.pageId)
+                            parsedRes[i].feed.data.forEach(function (feedValue) {
+
+                                if (feedValue.message) {
+                                    var feed = feedValue.message;
+                                    var feedPageId = feedValue.id;
+                                    var owner = {
+                                        fbId: req.user.id,
+                                        username: req.user.displayName
+                                    }
+                                    var feedData = {
+                                        feedName: parsedRes[i].name,
+                                        feedId: parsedRes[i].id,
+                                        feed: feed,
+                                        feedPageId: feedPageId,
+                                        user: owner
+                                    }
+                                    // console.log(feed);
+                                    Feed.findOne({feedPageId: feedPageId}, function (err, existingFeed) {
+                                        if (err) {
+                                            console.log(err)
+                                        } else if (existingFeed) {
+                                            // console.log(feedData)
+                                            // console.log("existing Feed")
+                                            // console.log("Feed exist's, j = "+j+", i = "+i)
+                                        }
+
+                                        else {
+
+                                    Feed.create(feedData, function (err, result) {
+                                        if (err) {
+                                            console.log(err)
+                                        } else {
+                                        }
+                                    })
+                                        }
+                                    })
+                                }
+                            })
+
+                            /*for (var j = 0; j < parsedRes[i].feed.data.length; j++) {
+                                if (parsedRes[i].feed.data[j].message) {
+                                    var feed = parsedRes[i].feed.data[j].message;
+                                    var feedPageIdLocal = parsedRes[i].feed.data[j].id;
+                                    var feedData = {
+                                        feedName: parsedRes[i].name,
+                                        feedId: parsedRes[i].id,
+                                        feed: feed,
+                                        feedPageId: feedPageIdLocal
+                                    }
+
+                                    // console.log(feedData)
+                                    var l = j
+                                    function (x){
+                                        // var y = x;
+                                        // var h = x
+                                        Feed.findOne({feedPageId: "401662736711100_425211731022867"}, function (err, existingFeed) {
+                                            console.log(x);
+                                            // if (err) {
+                                            //     console.log(err)
+                                            // } else if (existingFeed) {
+                                            //     // console.log(feedData)
+                                            //     console.log(existingFeed)
+                                            //     // console.log("Feed exist's, j = "+j+", i = "+i)
+                                            // }
+                                            //
+                                            // else {
+                                            //
+                                            //     Feed.create(feedData, function (err, result) {
+                                            //         if (err) {
+                                            //             console.log(err)
+                                            //         } else {
+                                            //         }
+                                            //     })
+                                            // }
+                                        })
+                                    }(j)*/
+
+
+
+                        }
+                            i++
+
+                    }
+                    // res.send("Successfully saved to db...");
+                    res.redirect('/page/'+req.params.pageId);
+                })
+
 }
 
   });
 
-app.get("/page", function (req, res) {
-    Feed.find({}, function(err, feed){
+app.get("/page/:pageId", function (req, res) {
+    Feed.find({feedId:req.params.pageId}, function(err, feed){
         if(err){console.log(err)}else{
-            console.log("=========")
-            console.log(feed)
+            // console.log("=========")
+            // console.log(feed)
             res.render("page", {feed: feed})
         }
 
     })
 })
 
-app.get("/page/:feedId", function(req, res){
+app.get("/page/:pageId/:feedId", function(req, res){
         Feed.findOne({feedPageId:req.params.feedId}, function(err, oneFeed){
             if(err){console.log(err)}else{
+                // res.json(oneFeed)
                 res.render("show", {oneFeed: oneFeed})
             }
         })
 })
 
-app.get("/page/:feedId/edit",checkPageOwnership, function(req, res){
+app.get("/page/:pageId/:feedId/edit",checkPageOwnership, function(req, res){
     Feed.findOne({feedPageId:req.params.feedId}, function(err, oneFeed){
         if(err){console.log(err)}else{
             res.render("edit", {oneFeed: oneFeed})
@@ -267,11 +449,11 @@ app.get("/page/:feedId/edit",checkPageOwnership, function(req, res){
     })
 })
 
-app.post("/page/:feedId/edit",checkPageOwnership, function (req, res) {
+app.post("/page/:pageId/:feedId/edit",checkPageOwnership, function (req, res) {
     console.log(req.body.feed)
     Feed.findOneAndUpdate({feedPageId:req.params.feedId},{feed:req.body.feed}, function(err, updatedFeed){
         if(err){console.log(err)}else{
-            res.redirect("/page/"+req.params.feedId);
+            res.redirect("/page/"+req.params.pageId+"/"+req.params.feedId);
         }
     })
 })
@@ -288,7 +470,7 @@ app.get("/logout", function(req, res){
 
 function checkPageOwnership(req, res, next){
     if(req.isAuthenticated()){
-        Feed.findOne({feedPageId: req.params.feedId}, function(err, feed){
+        Feed.findOne({feedPageId: req.params.feedId}, function(err, feed)   {
             if(err){
                 res.redirect("back")
             }else{
